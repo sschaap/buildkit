@@ -65,7 +65,7 @@ type source struct {
 
 type socketDialer struct {
 	path   string
-	dialer func(string) (net.Conn, error)
+	dialer func(path string) (net.Conn, error)
 }
 
 func (s socketDialer) Dial() (net.Conn, error) {
@@ -153,12 +153,10 @@ func toAgentSource(paths []string) (source, error) {
 			continue
 		}
 
-		fi, err := os.Stat(p)
-		if err != nil {
+		if parsed, err := getUnixSocketDialer(p); err != nil {
 			return source{}, errors.WithStack(err)
-		}
-		if fi.Mode()&os.ModeSocket > 0 {
-			socket = &socketDialer{path: p, dialer: unixSocketDialer}
+		} else if parsed != nil {
+			socket = parsed
 			continue
 		}
 
